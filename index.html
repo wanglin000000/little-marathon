@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>第一届马拉松</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #FF6B35; --yellow: #FFD166; --green: #06D6A0;
+      --blue: #118AB2; --red: #ef476f; --purple: #9b5de5;
+      --light-bg: #fff7ee; --card-bg: #ffffff;
+      --text: #333333; --text-light: #888888;
+      --radius: 20px; --shadow: 0 6px 24px rgba(255,107,53,0.14);
+    }
+    html, body {
+      width: 100%; min-height: 100vh;
+      font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
+      background: var(--light-bg); color: var(--text);
+      overflow-x: hidden; -webkit-font-smoothing: antialiased;
+    }
+    #app { min-height: 100vh; }
+    .page { display: none; min-height: 100vh; flex-direction: column; }
+    .page.active { display: flex; }
+
+    /* ====== Banner ====== */
+    .top-banner {
+      background: linear-gradient(135deg, #FF6B35 0%, #FFD166 50%, #FF8C42 100%);
+      padding: 20px 16px 36px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .top-banner::before {
+      content: ''; position: absolute; bottom: -24px; left: -10%; right: -10%;
+      height: 48px; background: var(--light-bg);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .banner-content { position: relative; z-index: 1; }
+    .banner-emoji { font-size: 44px; margin-bottom: 6px; display: block; }
+    .banner-title { font-size: 22px; font-weight: 900; color: #fff; line-height: 1.3; text-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .banner-sub { font-size: 13px; color: rgba(255,255,255,0.88); margin-top: 6px; }
+
+    /* ====== 卡片 ====== */
+    .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin: 16px; }
+
+    /* ====== 按钮 ====== */
+    .btn { display: block; width: 100%; padding: 16px; border: none; border-radius: 50px; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, #FF6B35, #FF8C42); color: #fff; box-shadow: 0 6px 24px rgba(255,107,53,0.42); }
+    .btn-primary:disabled { background: #ddd; box-shadow: none; color: #aaa; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: #f0f0f0; color: #555; }
+    .btn-danger { background: linear-gradient(135deg, #ff4d4d, #ff8080); color: #fff; }
+    .btn-green { background: linear-gradient(135deg, #06D6A0, #0aab80); color: #fff; box-shadow: 0 6px 20px rgba(6,214,160,0.4); }
+
+    /* ====== 表单 ====== */
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 14px; color: var(--text-light); margin-bottom: 8px; display: block; font-weight: 600; }
+    .form-select, .form-input {
+      width: 100%; padding: 14px 16px; border: 2px solid #f0e8e0; border-radius: 14px;
+      font-size: 16px; color: var(--text); background: #fff;
+      outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.2s;
+    }
+    .form-select:focus, .form-input:focus { border-color: var(--orange); }
+    .select-wrap { position: relative; }
+    .select-wrap::after { content: '▾'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--orange); font-size: 16px; pointer-events: none; }
+
+    /* ====== 头像上传 ====== */
+    .avatar-section { text-align: center; margin-bottom: 20px; }
+    .avatar-preview-wrap {
+      width: 96px; height: 96px; border-radius: 50%;
+      margin: 0 auto 10px; overflow: hidden;
+      border: 4px solid #FFD166; box-shadow: 0 4px 16px rgba(255,107,53,0.2);
+      background: #fff7ee; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .avatar-preview-wrap:active { transform: scale(0.95); }
+    .avatar-preview-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-hint { font-size: 12px; color: #aaa; }
+    .avatar-btns { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+    .avatar-btn {
+      padding: 8px 18px; border-radius: 50px; border: 2px solid #FFD166;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      background: #fff; color: var(--orange); transition: all 0.2s;
+    }
+    .avatar-btn:active { transform: scale(0.96); background: #fff7ee; }
+    input[type="file"] { display: none !important; }
+
+    /* ====== 模态框 ====== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 24px; padding: 32px 28px; margin: 20px;
+      text-align: center; max-width: 340px; width: 100%;
+      animation: modal-in 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modal-in { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-icon { font-size: 52px; margin-bottom: 12px; }
+    .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .modal-msg { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.6; }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btns .btn { flex: 1; padding: 12px; font-size: 15px; }
+
+    /* ====== 彩带 ====== */
+    .confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden; }
+    .confetti-piece { position: absolute; top: -10px; border-radius: 2px; animation: confetti-fall linear forwards; }
+    @keyframes confetti-fall { 0%{transform:translateY(0) rotateZ(0);opacity:1;} 100%{transform:translateY(110vh) rotateZ(720deg);opacity:0;} }
+
+    /* ====== 计步页顶部大图区域 ====== */
+        /* ====== 计时页：大Banner + 悬浮卡片 ====== */
+    
+    .counting-banner::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 40px;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.6));
+    }
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+    .avatar-circle {
+      width: 88px; height: 88px; border-radius: 50%;
+      margin: 0 auto 8px; border: 5px solid rgba(255,255,255,0.9);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+      overflow: hidden; background: #fff7ee;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+    .player-name { font-size: 20px; font-weight: 900; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    .player-meta { font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 3px; }
+    .timer-big { font-size: 72px; font-weight: 950; background: var(--orange); color: #fff; border-radius: 20px; padding: 12px 36px; display: inline-block; line-height: 1; box-shadow: 0 4px 20px rgba(255,107,53,0.4); font-variant-numeric: tabular-nums; }
+    .timer-big.warning { background: #ef476f; box-shadow: 0 4px 20px rgba(239,71,111,0.4); animation: pulse-warn 1s infinite; }
+    @keyframes pulse-warn { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+
+    /* ====== 步数 ====== */
+    .big-number { font-size: 80px; font-weight: 950; color: var(--orange); line-height: 1; text-shadow: 0 4px 20px rgba(255,107,53,0.22); font-variant-numeric: tabular-nums; }
+
+    /* ====== 进度条 ====== */
+    .progress-bar-wrap { padding: 16px 16px 0; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 6px; }
+    .progress-track { height: 10px; background: #f0e8e0; border-radius: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #FF6B35, #FFD166); border-radius: 10px; transition: width 0.5s ease; min-width: 0%; }
+
+    /* ====== 里程碑弹窗 ====== */
+    .milestone-popup {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+      background: #fff; border-radius: 32px; padding: 40px 32px;
+      text-align: center; z-index: 4000; width: 290px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .milestone-popup.show { transform: translate(-50%,-50%) scale(1); }
+    .milestone-emoji { font-size: 68px; display: block; margin-bottom: 6px; animation: emoji-bounce 0.5s ease; }
+    @keyframes emoji-bounce { 0%{transform:scale(0) rotate(-20deg)} 70%{transform:scale(1.15) rotate(5deg)} 100%{transform:scale(1) rotate(0)} }
+    .milestone-steps-num { font-size: 52px; font-weight: 950; color: var(--orange); line-height: 1; }
+    .milestone-steps-unit { font-size: 18px; color: #aaa; font-weight: 500; }
+    .milestone-cheer { font-size: 16px; font-weight: 700; color: #333; margin-top: 10px; line-height: 1.4; }
+
+    /* ====== 排行榜 ====== */
+    .rank-tabs { display: flex; gap: 8px; padding: 0 16px; margin-bottom: 12px; }
+    .rank-tab { flex: 1; padding: 10px; border-radius: 50px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; background: #f0f0f0; color: #888; transition: all 0.2s; }
+    .rank-tab.active { background: var(--orange); color: #fff; box-shadow: 0 4px 14px rgba(255,107,53,0.38); }
+    .rank-item { display: flex; align-items: center; padding: 12px; border-radius: 14px; margin-bottom: 8px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+    .rank-num { font-size: 20px; font-weight: 900; width: 40px; text-align: center; flex-shrink: 0; }
+    .rank-avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: #fff7ee; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: 0 8px; }
+    .rank-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .rank-info { flex: 1; }
+    .rank-name { font-size: 16px; font-weight: 700; }
+    .rank-class { font-size: 12px; color: #888; margin-top: 2px; }
+    .rank-steps { font-size: 22px; font-weight: 900; color: var(--orange); flex-shrink: 0; }
+    .rank-steps span { font-size: 11px; color: #aaa; font-weight: 400; }
+
+    /* ====== Admin 总览 ====== */
+    .overview-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 16px; }
+    .overview-card { background: #fff; border-radius: 16px; padding: 14px 8px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .overview-grade { font-size: 13px; font-weight: 700; color: var(--text-light); margin-bottom: 4px; }
+    .overview-count { font-size: 30px; font-weight: 950; color: var(--orange); }
+    .overview-unit { font-size: 11px; color: #aaa; }
+    .overview-top { font-size: 10px; color: var(--green); font-weight: 700; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .overview-bar { height: 4px; border-radius: 4px; margin-top: 8px; }
+    .live-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); font-weight: 700; }
+    .live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: live-pulse 1.5s infinite; }
+    @keyframes live-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+    /* ====== 结果页头像 ====== */
+    .result-avatar { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 12px; border: 6px solid rgba(255,255,255,0.9); box-shadow: 0 6px 24px rgba(0,0,0,0.15); overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+    .result-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .empty-state { text-align: center; padding: 48px 16px; color: #bbb; }
+    .empty-state .emoji { font-size: 52px; display: block; margin-bottom: 12px; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #ffc89a; border-radius: 4px; }
+  
+    /* ====== 计时页：清爽橙白主题 ====== */
+    .counting-header {
+      background: linear-gradient(135deg, #FF6B35 0%, #FFD166 50%, #FF8C42 100%);base64,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') center top / cover no-repeat;
+      padding: 20px 20px 28px;
+      text-align: center;
+      position: relative;
+      min-height: 160px;
+    }
+    .counting-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 28px;
+      background: #f5f5f5;
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .counting-header-overlay {
+      position: relative; z-index: 2;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+      min-height: 160px; padding-bottom: 8px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+    }
+    .counting-header-title {
+      font-size: 24px; font-weight: 950; color: #fff;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      letter-spacing: 1px;
+    }
+    .counting-header-sub {
+      font-size: 12px; color: rgba(255,255,255,0.95);
+      margin-top: 5px; letter-spacing: 0.5px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .counting-avatar-wrap {
+      text-align: center;
+      padding: 16px 0 4px;
+      position: relative; z-index: 2;
+    }
+    .counting-avatar-ring {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      background: #fff;
+      border: 5px solid #FF6B35;
+      box-shadow: 0 6px 24px rgba(255,107,53,0.35);
+      margin: 0 auto;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+
+    .counting-profile-card {
+      text-align: center;
+      padding: 10px 20px 0;
+    }
+    .counting-player-name {
+      font-size: 22px; font-weight: 900; color: #333;
+    }
+    .counting-player-meta {
+      font-size: 13px; color: #aaa; margin-top: 4px;
+    }
+
+    .counting-timer-wrap {
+      padding: 14px 20px 20px;
+      text-align: center;
+    }
+    .counting-timer-label {
+      font-size: 11px; color: #bbb; letter-spacing: 3px; margin-bottom: 6px;
+    }
+    .counting-timer {
+      font-size: 72px; font-weight: 950; color: #FF6B35;
+      line-height: 1; font-variant-numeric: tabular-nums;
+      text-shadow: 0 4px 20px rgba(255,107,53,0.25);
+      background: var(--orange); color: #fff; border-radius: 20px;
+      padding: 12px 36px; display: inline-block;
+      box-shadow: 0 4px 20px rgba(255,107,53,0.4);
+    }
+
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ========== 登记页 ========== -->
+<div class="page active" id="page-register">
+  <div class="top-banner">
+    <div class="banner-content">
+      <span class="banner-emoji">🏃</span>
+      <div class="banner-title">第一届小小马拉松</div>
+      <div class="banner-sub">北京幼师实验幼儿园定州园</div>
+    </div>
+  </div>
+
+  <div style="padding:20px 16px 0;text-align:center;">
+    <div style="font-size:15px;color:#888;">请填写信息，准备出发！</div>
+  </div>
+
+  <div class="card">
+    <!-- 头像 -->
+    <div class="avatar-section">
+      <div class="avatar-preview-wrap" onclick="document.getElementById('avatar-cam').click()">
+        <span id="avatar-placeholder" style="font-size:38px;">📷</span>
+        <img id="avatar-img" style="display:none;width:100%;height:100%;object-fit:cover;" />
+      </div>
+      <div class="avatar-hint">点击拍照或选择头像（可选）</div>
+      <div class="avatar-btns">
+        <button class="avatar-btn" onclick="event.stopPropagation();document.getElementById('avatar-cam').click()">📸 拍照</button>
+        <button class="avatar-btn" onclick="event.stopPropagation();document.getElementById('avatar-gallery').click()">🖼️ 相册</button>
+      </div>
+      <input type="file" id="avatar-cam" accept="image/*" capture="user" onchange="handleAvatar(this)" />
+      <input type="file" id="avatar-gallery" accept="image/*" onchange="handleAvatar(this)" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">📚 年级</label>
+      <div class="select-wrap">
+        <select class="form-select" id="sel-grade" onchange="onGradeChange()">
+          <option value="">请选择年级</option>
+          <option value="小班">小班</option>
+          <option value="中班">中班</option>
+          <option value="大班">大班</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">🏫 班级</label>
+      <div class="select-wrap">
+        <select class="form-select" id="sel-class">
+          <option value="">请先选择年级</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">🧒 姓名</label>
+      <input class="form-input" id="inp-name" type="text" placeholder="请输入小朋友的姓名" maxlength="10" oninput="checkForm()" />
+    </div>
+  </div>
+
+  <div style="padding:0 16px 32px;">
+    <button class="btn btn-primary" id="btn-start" disabled onclick="onStartRace()">🚀 开始比赛！</button>
+  </div>
+  <div style="padding:0 16px 0;text-align:center;">
+    <div class="card" style="text-align:center;padding:16px 12px;margin-bottom:8px;background:#fff;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+      <div style="font-size:13px;color:#aaa;margin-bottom:10px;letter-spacing:1px;">📱 扫码参赛</div>
+      <img src="entry-qr.png" alt="参赛二维码" style="width:160px;height:160px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);" />
+      <div style="font-size:12px;color:#bbb;margin-top:8px;">长按识别 · 立即参赛</div>
+    </div>
+  </div>
+  <div style="text-align:center;padding:12px 16px 28px;">
+    <span style="font-size:13px;color:#ccc;cursor:pointer;" onclick="goAdmin()">管理员入口</span>
+  </div>
+</div>
+
+<!-- ========== 计步页 ========== -->
+<div class="page" id="page-counting">
+  <!-- 顶部Banner（背景图+标题） -->
+  <div class="counting-header">
+    <div class="counting-header-overlay">
+      <div class="counting-header-title">第一届小小马拉松</div>
+      <div class="counting-header-sub">北京幼师实验幼儿园定州园</div>
+    </div>
+  </div>
+
+  <!-- 头像区域 -->
+  <div class="counting-avatar-wrap">
+    <div class="counting-avatar-ring" id="counting-avatar">
+      <span style="font-size:42px;">🏃</span>
+    </div>
+  </div>
+
+  <!-- 姓名卡片 -->
+  <div class="counting-profile-card">
+    <div class="counting-player-name" id="counting-name">小朋友</div>
+    <div class="counting-player-meta" id="counting-info">— · —</div>
+  </div>
+
+  <!-- 倒计时区域 -->
+  <div class="counting-timer-wrap">
+    <div class="counting-timer-label">⏱ 剩余时间</div>
+    <div class="counting-timer" id="timer-display">30:00</div>
+  </div>
+
+  <!-- 里程进度条 -->
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span>🎯 目标进度</span>
+      <span id="progress-text">0 / 3000 步</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
+    </div>
+  </div>
+
+  <!-- 步数 + 鼓励 -->
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;">
+    <div class="card" style="width:100%;text-align:center;margin:0 0 12px;background:linear-gradient(135deg,#fff,#fff7ee);">
+      <div style="font-size:13px;color:#aaa;margin-bottom:6px;letter-spacing:2px;">当前步数 👣</div>
+      <div class="big-number" id="step-display">0</div>
+    </div>
+    <div id="cheer-text" style="font-size:17px;color:var(--orange);font-weight:700;text-align:center;min-height:26px;margin-bottom:16px;"></div>
+    <div id="btn-area" style="width:100%;">
+      <button class="btn btn-primary" id="btn-go" onclick="onCountStart()">🏁 准备好了，开始！</button>
+    </div>
+  </div>
+
+  <div style="padding:0 16px 28px;">
+    <button class="btn btn-secondary" onclick="onExitCounting()">← 退出比赛</button>
+  </div>
+</div>
+
+<!-- ========== 完成页 ========== -->
+<div class="page" id="page-result">
+  <div class="confetti-container" id="confetti-container"></div>
+  <div class="top-banner" style="background:linear-gradient(135deg,#06D6A0 0%,#118AB2 100%);">
+    <div class="banner-content">
+      <span class="banner-emoji">🏆</span>
+      <div class="banner-title">太棒了，完成啦！</div>
+      <div class="banner-sub" id="result-info">恭喜你完成比赛</div>
+    </div>
+  </div>
+
+  <div style="flex:1;padding:16px;">
+    <div class="card" style="text-align:center;margin-bottom:14px;">
+      <div class="result-avatar" id="result-avatar"><span style="font-size:48px;">🏃</span></div>
+      <div id="result-name" style="font-size:22px;font-weight:900;color:#333;"></div>
+      <div id="result-class-info" style="font-size:13px;color:#aaa;margin-top:4px;"></div>
+    </div>
+    <div class="card" style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:13px;color:#aaa;margin-bottom:8px;letter-spacing:2px;">最终步数</div>
+      <div class="big-number" id="result-steps">0</div>
+      <div style="font-size:13px;color:#ccc;margin-top:6px;">步 👣</div>
+      <div id="result-cheer" style="margin-top:14px;font-size:15px;color:var(--orange);font-weight:700;"></div>
+    </div>
+    <div class="card" style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:14px;color:#aaa;margin-bottom:6px;">📊 年级排名</div>
+      <div id="result-rank" style="font-size:38px;font-weight:950;color:var(--orange);"></div>
+      <div id="result-rank-detail" style="font-size:13px;color:#aaa;margin-top:4px;"></div>
+    </div>
+  </div>
+
+  <div style="padding:0 16px 4px;text-align:center;">
+    <div class="card" style="text-align:center;padding:14px 12px;background:#fff;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+      <div style="font-size:13px;color:#aaa;margin-bottom:8px;letter-spacing:1px;">📱 邀请更多小朋友参赛</div>
+      <img src="entry-qr.png" alt="参赛二维码" style="width:140px;height:140px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);" />
+      <div style="font-size:12px;color:#bbb;margin-top:6px;">长按识别 · 扫码参赛</div>
+    </div>
+  </div>
+
+  <div style="padding:8px 16px 32px;display:flex;flex-direction:column;gap:12px;">
+    <button class="btn btn-primary" onclick="gotoRegister()">👥 下一位小朋友参赛</button>
+    <button class="btn btn-secondary" onclick="gotoRankPage()">📋 查看排行榜</button>
+  </div>
+</div>
+
+<!-- ========== 管理员登录 ========== -->
+<div class="page" id="page-admin-login">
+  <div class="top-banner" style="background:linear-gradient(135deg,#118AB2 0%,#06D6A0 100%);">
+    <div class="banner-content">
+      <span class="banner-emoji">🔑</span>
+      <div class="banner-title">管理员入口</div>
+      <div class="banner-sub">请输入管理员密码</div>
+    </div>
+  </div>
+  <div style="padding:32px 16px;">
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">🔒 管理员密码</label>
+        <input class="form-input" id="inp-pwd" type="password" placeholder="请输入密码" onkeyup="if(event.key==='Enter')onAdminLogin()" />
+      </div>
+      <button class="btn btn-primary" onclick="onAdminLogin()">进入管理后台</button>
+      <div style="text-align:center;margin-top:16px;">
+        <span style="font-size:13px;color:#bbb;cursor:pointer;" onclick="showPage('page-register')">← 返回首页</span>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:#ccc;">默认密码：marathon2024</div>
+  </div>
+</div>
+
+<!-- ========== 管理员排行榜 ========== -->
+<div class="page" id="page-rank">
+  <div class="top-banner" style="background:linear-gradient(135deg,#118AB2 0%,#073B4C 100%);">
+    <div class="banner-content">
+      <span class="banner-emoji">🥇</span>
+      <div class="banner-title">🏃 管理员后台</div>
+      <div class="banner-sub"><span class="live-indicator"><span class="live-dot"></span>管理员实时排行榜</span></div>
+    </div>
+  </div>
+
+  <!-- 三年级总览 -->
+  <div class="overview-grid">
+    <div class="overview-card">
+      <div class="overview-grade">🌱 小班</div>
+      <div class="overview-count" id="count-xb">0</div>
+      <div class="overview-unit">人参赛</div>
+      <div class="overview-top" id="top-xb">暂无记录</div>
+      <div class="overview-bar" style="background:linear-gradient(90deg,#FF6B35,#FFD166);"></div>
+    </div>
+    <div class="overview-card">
+      <div class="overview-grade">🌿 中班</div>
+      <div class="overview-count" id="count-zb">0</div>
+      <div class="overview-unit">人参赛</div>
+      <div class="overview-top" id="top-zb">暂无记录</div>
+      <div class="overview-bar" style="background:linear-gradient(90deg,#06D6A0,#118AB2);"></div>
+    </div>
+    <div class="overview-card">
+      <div class="overview-grade">🌳 大班</div>
+      <div class="overview-count" id="count-db">0</div>
+      <div class="overview-unit">人参赛</div>
+      <div class="overview-top" id="top-db">暂无记录</div>
+      <div class="overview-bar" style="background:linear-gradient(90deg,#9b5de5,#ef476f);"></div>
+    </div>
+  </div>
+
+  <!-- 年级Tab -->
+  <div class="rank-tabs">
+    <button class="rank-tab active" data-grade="小班" onclick="switchGradeTab(this)">🌱 小班</button>
+    <button class="rank-tab" data-grade="中班" onclick="switchGradeTab(this)">🌿 中班</button>
+    <button class="rank-tab" data-grade="大班" onclick="switchGradeTab(this)">🌳 大班</button>
+  </div>
+
+  <div style="padding:0 16px 8px;display:flex;justify-content:space-between;align-items:center;">
+    <div id="rank-count" style="font-size:13px;color:#aaa;"></div>
+    <button onclick="refreshRank()" style="background:none;border:none;color:var(--orange);font-size:13px;cursor:pointer;font-weight:700;">🔄 刷新</button>
+  </div>
+
+  <div id="rank-list" style="padding:0 16px;max-height:42vh;overflow-y:auto;"></div>
+
+  <div style="padding:12px 16px 32px;display:flex;flex-direction:column;gap:10px;">
+    <button class="btn btn-secondary" onclick="gotoRegister()">← 返回首页</button>
+    <button class="btn btn-green" onclick="exportData()">📥 导出全部数据（CSV）</button>
+  </div>
+</div>
+
+</div><!-- end #app -->
+
+<!-- 退出弹窗 -->
+<div class="modal-overlay" id="modal-exit">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">确认退出？</div>
+    <div class="modal-msg">比赛正在进行中，退出将不保存本次成绩哦！</div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('modal-exit')">继续比赛</button>
+      <button class="btn btn-danger" onclick="confirmExit()">确认退出</button>
+    </div>
+  </div>
+</div>
+
+<!-- 覆盖弹窗 -->
+<div class="modal-overlay" id="modal-overwrite">
+  <div class="modal-box">
+    <div class="modal-icon">📝</div>
+    <div class="modal-title">已有记录</div>
+    <div class="modal-msg" id="modal-overwrite-msg">已有成绩，是否覆盖？</div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('modal-overwrite')">取消</button>
+      <button class="btn btn-primary" onclick="confirmOverwrite()">覆盖参赛</button>
+    </div>
+  </div>
+</div>
+
+<!-- 里程碑弹窗 -->
+<div class="modal-overlay" id="modal-milestone" onclick="if(event.target===this)closeMilestone()">
+  <div class="milestone-popup" id="milestone-popup">
+    <span class="milestone-emoji" id="ms-emoji">🎉</span>
+    <div class="milestone-steps-num" id="ms-steps">100</div>
+    <div class="milestone-steps-unit">步</div>
+    <div class="milestone-cheer" id="ms-text">太棒了！</div>
+  </div>
+</div>
+
+<script>
+// ==================== 数据层 ====================
+const STORAGE_KEY = 'marathon_records_v2';
+const ADMIN_PWD = 'marathon2024';
+
+function getAllRecords() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+}
+function saveRecord(record) {
+  const records = getAllRecords();
+  const idx = records.findIndex(r => r.grade === record.grade && r.class === record.class && r.name === record.name);
+  if (idx >= 0) records[idx] = record; else records.push(record);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+function findRecord(g, c, n) {
+  return getAllRecords().find(r => r.grade === g && r.class === c && r.name === n);
+}
+function getTopN(grade, n = 20) {
+  return getAllRecords().filter(r => r.grade === grade && r.status === 'finished').sort((a, b) => b.steps - a.steps).slice(0, n);
+}
+function getRankInGrade(grade, steps) {
+  const all = getAllRecords().filter(r => r.grade === grade && r.status === 'finished').sort((a, b) => b.steps - a.steps);
+  const idx = all.findIndex(r => r.steps <= steps);
+  return idx >= 0 ? idx + 1 : all.length + 1;
+}
+function getGradeCount(grade) { return getAllRecords().filter(r => r.grade === grade && r.status === 'finished').length; }
+
+const CLASSES = {
+  '小班': ['小班1班', '小班2班', '小班3班'],
+  '中班': ['中班1班', '中班2班', '中班3班'],
+  '大班': ['大班1班', '大班2班', '大班3班'],
+};
+
+// ==================== 路由 ====================
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ==================== 全局状态 ====================
+let currentPlayer = null;
+let currentAvatar = null;
+let timerInterval = null;
+let adminInterval = null;
+let remainSeconds = 1800;
+let currentSteps = 0;
+let isRunning = false;
+let lastMilestone = 0;
+let milestoneQueue = [];
+let pendingStartPlayer = null;
+let lastStepTime = 0;
+
+// ==================== 头像 ====================
+function handleAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentAvatar = e.target.result;
+    document.getElementById('avatar-img').src = currentAvatar;
+    document.getElementById('avatar-img').style.display = 'block';
+    document.getElementById('avatar-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ==================== 登记页 ====================
+function onGradeChange() {
+  const grade = document.getElementById('sel-grade').value;
+  const sel = document.getElementById('sel-class');
+  sel.innerHTML = '<option value="">请选择班级</option>';
+  if (CLASSES[grade]) CLASSES[grade].forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c; sel.appendChild(o);
+  });
+  checkForm();
+}
+document.getElementById('sel-class').addEventListener('change', checkForm);
+document.getElementById('inp-name').addEventListener('input', checkForm);
+
+function checkForm() {
+  const ok = document.getElementById('sel-grade').value &&
+             document.getElementById('sel-class').value &&
+             document.getElementById('inp-name').value.trim();
+  document.getElementById('btn-start').disabled = !ok;
+}
+
+function onStartRace() {
+  const grade = document.getElementById('sel-grade').value;
+  const cls   = document.getElementById('sel-class').value;
+  const name  = document.getElementById('inp-name').value.trim();
+  if (!grade || !cls || !name) return;
+  const existing = findRecord(grade, cls, name);
+  if (existing && existing.status === 'finished') {
+    pendingStartPlayer = { grade, class: cls, name };
+    document.getElementById('modal-overwrite-msg').textContent =
+      `「${name}」已有成绩（${existing.steps}步），是否覆盖？`;
+    showModal('modal-overwrite');
+  } else {
+    startCountingPage(grade, cls, name);
+  }
+}
+
+function confirmOverwrite() {
+  closeModal('modal-overwrite');
+  if (pendingStartPlayer) {
+    startCountingPage(pendingStartPlayer.grade, pendingStartPlayer.class, pendingStartPlayer.name);
+    pendingStartPlayer = null;
+  }
+}
+
+function startCountingPage(grade, cls, name) {
+  clearInterval(timerInterval);
+  window.removeEventListener('devicemotion', handleMotion);
+  localStorage.removeItem(RUN_KEY); // 清除旧的进行中状态
+  currentPlayer = { grade, class: cls, name };
+  currentSteps = 0; lastMilestone = 0; milestoneQueue = [];
+  remainSeconds = 1800; isRunning = false;
+
+  // 头像
+  const av = document.getElementById('counting-avatar');
+  av.innerHTML = currentAvatar
+    ? `<img src="${currentAvatar}" style="width:100%;height:100%;object-fit:cover;" />`
+    : '<span style="font-size:42px;">🏃</span>';
+
+  document.getElementById('counting-name').textContent = name;
+  document.getElementById('counting-info').textContent = `${grade} · ${cls}`;
+  document.getElementById('timer-display').textContent = '30:00';
+  document.getElementById('timer-display').className = 'timer-big';
+  document.getElementById('step-display').textContent = '0';
+  document.getElementById('cheer-text').textContent = '准备好了吗？加油！💪';
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('progress-text').textContent = '0 / 3000 步';
+  document.getElementById('btn-area').innerHTML =
+    `<button class="btn btn-primary" id="btn-go" onclick="onCountStart()">🏁 准备好了，开始！</button>`;
+  showPage('page-counting');
+}
+
+// ==================== 后台保护：离开页面时保存状态，回来时恢复 ====================
+const RUN_KEY = 'marathon_run_state';
+
+function saveRunState() {
+  const state = {
+    currentPlayer, currentSteps, lastMilestone,
+    remainSeconds, isRunning, currentAvatar
+  };
+  localStorage.setItem(RUN_KEY, JSON.stringify(state));
+}
+
+function restoreRunState() {
+  const raw = localStorage.getItem(RUN_KEY);
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    if (!s.currentPlayer) return;
+    currentPlayer  = s.currentPlayer;
+    currentSteps   = s.currentSteps   || 0;
+    lastMilestone  = s.lastMilestone  || 0;
+    remainSeconds  = s.remainSeconds  || 1800;
+    isRunning      = false;
+    currentAvatar  = s.currentAvatar  || null;
+
+    // 恢复头像
+    const av = document.getElementById('counting-avatar');
+    if (currentAvatar) {
+      av.innerHTML = `<img src="${currentAvatar}" style="width:100%;height:100%;object-fit:cover;" />`;
+    }
+
+    document.getElementById('counting-name').textContent = currentPlayer.name;
+    document.getElementById('counting-info').textContent = `${currentPlayer.grade} · ${currentPlayer.class}`;
+    document.getElementById('step-display').textContent = currentSteps.toLocaleString();
+    const pct = Math.min(currentSteps / 3000 * 100, 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `${currentSteps.toLocaleString()} / 3000 步`;
+    updateCheer(currentSteps);
+
+    const m = Math.floor(remainSeconds / 60), ss = remainSeconds % 60;
+    document.getElementById('timer-display').textContent = `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+    document.getElementById('timer-display').className = 'timer-big' + (remainSeconds <= 60 ? ' warning' : '');
+
+    if (s.isRunning) {
+      // 如果离开时正在跑，立即重新启动
+      isRunning = true;
+      startTimer();
+      // 重新注册计步传感器（需再次获取权限）
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission().then(r => r === 'granted' ? startStepDetector() : startManualMode()).catch(() => startManualMode());
+      } else if (typeof DeviceMotionEvent !== 'undefined') {
+        startStepDetector();
+      } else {
+        startManualMode();
+      }
+      document.getElementById('btn-go').style.display = 'none';
+    }
+
+    showPage('page-counting');
+    // 显示恢复提示
+    document.getElementById('cheer-text').textContent = '👋 已恢复，继续加油！';
+  } catch(e) { localStorage.removeItem(RUN_KEY); }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    saveRunState();
+  } else {
+    // 回到页面时立即尝试恢复一次（防止刚进入时状态已存在）
+    restoreRunState();
+  }
+});
+
+// 页面加载时尝试恢复状态（防止刷新/返回时丢失）
+window.addEventListener('pageshow', e => { if (e.persisted || localStorage.getItem(RUN_KEY)) restoreRunState(); });
+
+// ==================== 计步 ====================
+function onCountStart() {
+  if (isRunning) return;
+  isRunning = true;
+  document.getElementById('btn-go').style.display = 'none';
+  saveRunState(); // 启动时立即保存
+
+  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission()
+      .then(r => r === 'granted' ? startStepDetector() : startManualMode())
+      .catch(() => startManualMode());
+  } else if (typeof DeviceMotionEvent !== 'undefined') {
+    startStepDetector();
+  } else {
+    startManualMode();
+  }
+  startTimer();
+}
+
+function startStepDetector() { window.addEventListener('devicemotion', handleMotion); }
+
+function handleMotion(e) {
+  if (!isRunning) return;
+  const a = e.accelerationIncludingGravity;
+  if (!a) return;
+  const mag = Math.sqrt(a.x**2 + a.y**2 + a.z**2);
+  const now = Date.now();
+  if (mag > 12 && now - lastStepTime > 280) { lastStepTime = now; addStep(); }
+}
+
+function startManualMode() {
+  document.getElementById('btn-area').innerHTML = `
+    <div style="text-align:center;margin-bottom:12px;font-size:13px;color:#aaa;">传感器不可用，点击计步</div>
+    <button class="btn btn-primary" style="font-size:22px;padding:22px;" onclick="addStep()">👣 点击计一步</button>
+  `;
+}
+
+function addStep() {
+  if (!isRunning) return;
+  currentSteps++;
+  document.getElementById('step-display').textContent = currentSteps.toLocaleString();
+  const pct = Math.min(currentSteps / 3000 * 100, 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${currentSteps.toLocaleString()} / 3000 步`;
+  updateCheer(currentSteps);
+  checkMilestone(currentSteps);
+  saveRunState(); // 实时持久化
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    if (remainSeconds <= 0) { clearInterval(timerInterval); onTimerEnd(); return; }
+    remainSeconds--;
+    const m = Math.floor(remainSeconds / 60), s = remainSeconds % 60;
+    document.getElementById('timer-display').textContent =
+      `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (remainSeconds <= 60) document.getElementById('timer-display').className = 'timer-big warning';
+    if (remainSeconds % 10 === 0) saveRunState(); // 每10秒保存一次
+  }, 1000);
+}
+
+// ==================== 里程碑 ====================
+const MILESTONES = [
+  {steps:100,  emoji:'🌟', text:'走了100步啦！超棒！'},
+  {steps:200,  emoji:'💪', text:'200步！继续加油哦！'},
+  {steps:300,  emoji:'🔥', text:'300步！你是小火箭！'},
+  {steps:400,  emoji:'🚀', text:'400步！冲冲冲！'},
+  {steps:500,  emoji:'🏅', text:'500步达成！好厉害！'},
+  {steps:600,  emoji:'🌈', text:'600步！彩虹为你绽放！'},
+  {steps:700,  emoji:'⚡', text:'700步！能量爆满！'},
+  {steps:800,  emoji:'🎯', text:'800步！越来越棒啦！'},
+  {steps:900,  emoji:'🌸', text:'900步！你真了不起！'},
+  {steps:1000, emoji:'🎉', text:'哇！走了1000步！太厉害啦！'},
+  {steps:1200, emoji:'⭐', text:'1200步！小星星为你闪光！'},
+  {steps:1500, emoji:'👑', text:'1500步！你是小冠军！'},
+  {steps:1800, emoji:'🌟', text:'1800步！坚持就是力量！'},
+  {steps:2000, emoji:'🎊', text:'2000步！！！太不可思议了！！'},
+  {steps:2500, emoji:'🏅', text:'2500步！你是马拉松小英雄！'},
+  {steps:3000, emoji:'🏆', text:'3000步！！目标达成！你最棒！！'},
+];
+
+let showingMilestone = false;
+
+function checkMilestone(steps) {
+  for (const m of MILESTONES) {
+    if (steps >= m.steps && lastMilestone < m.steps) {
+      lastMilestone = m.steps;
+      milestoneQueue.push(m);
+    }
+  }
+  if (!showingMilestone && milestoneQueue.length > 0) showNextMilestone();
+}
+
+function showNextMilestone() {
+  if (milestoneQueue.length === 0) { showingMilestone = false; return; }
+  showingMilestone = true;
+  const m = milestoneQueue.shift();
+  document.getElementById('ms-emoji').textContent = m.emoji;
+  document.getElementById('ms-steps').textContent = m.steps;
+  document.getElementById('ms-text').textContent = m.text;
+  document.getElementById('modal-milestone').classList.add('show');
+  document.getElementById('milestone-popup').classList.add('show');
+  launchMiniConfetti();
+  setTimeout(closeMilestone, 2200);
+}
+
+function closeMilestone() {
+  document.getElementById('modal-milestone').classList.remove('show');
+  document.getElementById('milestone-popup').classList.remove('show');
+  setTimeout(() => { showingMilestone = false; if (milestoneQueue.length > 0) showNextMilestone(); }, 400);
+}
+
+function launchMiniConfetti() {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:3999;overflow:hidden;';
+  document.body.appendChild(box);
+  const colors = ['#FF6B35','#FFD166','#06D6A0','#118AB2','#ef476f','#9b5de5'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute;top:${10+Math.random()*20}%;left:${Math.random()*100}%;
+      width:${5+Math.random()*8}px;height:${10+Math.random()*10}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      animation:confetti-fall ${1.2+Math.random()*1.5}s ease-out ${Math.random()*.4}s forwards;`;
+    box.appendChild(el);
+  }
+  setTimeout(() => box.remove(), 3000);
+}
+
+const CHEERS = [
+  ['准备好了吗？加油！💪', 0],
+  ['迈开腿，走起来！🌟', 50],
+  ['步伐稳健，继续！🔥', 150],
+  ['你已经走了很远啦！🌈', 400],
+  ['冲冲冲，太厉害了！🚀', 700],
+  ['小马拉松冠军！🏅', 1000],
+  ['了不起，继续向前！🎉', 1500],
+  ['你就是今天的王者！👑', 2000],
+  ['步数爆表！超级运动达人！🏆', 2500],
+];
+
+function updateCheer(steps) {
+  let msg = CHEERS[0][0];
+  for (const [t, th] of CHEERS) { if (steps >= th) msg = t; }
+  document.getElementById('cheer-text').textContent = msg;
+}
+
+// ==================== 计时结束 ====================
+function onTimerEnd() {
+  isRunning = false;
+  window.removeEventListener('devicemotion', handleMotion);
+  clearInterval(timerInterval);
+  localStorage.removeItem(RUN_KEY); // 清除进行中的状态
+  const record = {
+    id: Date.now().toString(),
+    grade: currentPlayer.grade, class: currentPlayer.class, name: currentPlayer.name,
+    avatar: currentAvatar || '',
+    steps: currentSteps, duration: 1800,
+    created_at: new Date().toISOString(), finished_at: new Date().toISOString(),
+    status: 'finished'
+  };
+  saveRecord(record);
+  showResultPage(record);
+}
+
+function onExitCounting() { if (isRunning) showModal('modal-exit'); else gotoRegister(); }
+
+function confirmExit() {
+  clearInterval(timerInterval); isRunning = false;
+  window.removeEventListener('devicemotion', handleMotion);
+  localStorage.removeItem(RUN_KEY); // 清除进行中的状态
+  closeModal('modal-exit'); gotoRegister();
+}
+
+// ==================== 结果页 ====================
+function showResultPage(record) {
+  const rank = getRankInGrade(record.grade, record.steps);
+  const total = getGradeCount(record.grade);
+  const av = document.getElementById('result-avatar');
+  av.innerHTML = record.avatar
+    ? `<img src="${record.avatar}" style="width:100%;height:100%;object-fit:cover;" />`
+    : '<span style="font-size:48px;">🏃</span>';
+  document.getElementById('result-name').textContent = record.name;
+  document.getElementById('result-class-info').textContent = `${record.grade} · ${record.class}`;
+  document.getElementById('result-info').textContent = `${record.name} · ${record.grade}`;
+  document.getElementById('result-steps').textContent = record.steps.toLocaleString();
+  document.getElementById('result-rank').textContent = `第 ${rank} 名`;
+  document.getElementById('result-rank-detail').textContent = `${record.grade}共 ${total} 名参赛小朋友`;
+  let cheer = '太棒了！完成了30分钟马拉松！🌟';
+  if (record.steps >= 3000) cheer = '🏆🏆 超级运动达人！步数破3000！太厉害了！';
+  else if (record.steps >= 2000) cheer = '💪💪 好厉害！走了超过2000步！';
+  else if (record.steps >= 1000) cheer = '🌈 坚持就是胜利！走了1000步！';
+  document.getElementById('result-cheer').textContent = cheer;
+  showPage('page-result');
+  launchConfetti();
+}
+
+// ==================== 彩带 ====================
+function launchConfetti() {
+  const c = document.getElementById('confetti-container');
+  c.innerHTML = '';
+  const cols = ['#FF6B35','#FFD166','#06D6A0','#118AB2','#ef476f','#9b5de5','#ffd700'];
+  for (let i = 0; i < 120; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `left:${Math.random()*100}%;background:${cols[Math.floor(Math.random()*cols.length)]};
+      width:${6+Math.random()*10}px;height:${12+Math.random()*14}px;
+      animation-duration:${1.5+Math.random()*2.5}s;animation-delay:${Math.random()*1.5}s;
+      border-radius:${Math.random()>.5?'50%':'2px'};`;
+    c.appendChild(el);
+  }
+  setTimeout(() => c.innerHTML = '', 6000);
+}
+
+// ==================== 排行榜 ====================
+let currentRankGrade = '小班';
+
+function switchGradeTab(el) {
+  document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentRankGrade = el.dataset.grade;
+  renderRankList(currentRankGrade);
+}
+
+function renderOverview() {
+  const G = [['小班','xb'],['中班','zb'],['大班','db']];
+  for (const [g, k] of G) {
+    const cnt = getGradeCount(g);
+    const top = getTopN(g, 1);
+    document.getElementById('count-' + k).textContent = cnt;
+    document.getElementById('top-' + k).textContent =
+      top.length ? `第1名: ${top[0].name} ${top[0].steps}步` : '暂无记录';
+  }
+}
+
+function renderRankList(grade) {
+  const list = getTopN(grade, 20);
+  const cnt = getGradeCount(grade);
+  document.getElementById('rank-count').textContent =
+    `${grade}共 ${cnt} 人，展示前 ${Math.min(list.length,20)} 名`;
+
+  const container = document.getElementById('rank-list');
+  if (!list.length) {
+    container.innerHTML = '<div class="empty-state"><span class="emoji">🏃</span>暂无参赛记录</div>';
+    return;
+  }
+  container.innerHTML = list.map((r, i) => {
+    const num = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+    return `<div class="rank-item">
+      <div class="rank-num">${num}</div>
+      <div class="rank-avatar">${r.avatar ? `<img src="${r.avatar}"/>` : '<span style="font-size:20px;">🏃</span>'}</div>
+      <div class="rank-info">
+        <div class="rank-name">${r.name}</div>
+        <div class="rank-class">${r.class}</div>
+      </div>
+      <div class="rank-steps">${r.steps.toLocaleString()}<span> 步</span></div>
+    </div>`;
+  }).join('');
+}
+
+function refreshRank() { renderOverview(); renderRankList(currentRankGrade); }
+
+// ==================== 管理员 ====================
+function goAdmin() { showPage('page-admin-login'); }
+
+function onAdminLogin() {
+  if (document.getElementById('inp-pwd').value === ADMIN_PWD) {
+    document.getElementById('inp-pwd').value = '';
+    renderOverview(); renderRankList('小班');
+    showPage('page-rank');
+    if (adminInterval) clearInterval(adminInterval);
+    adminInterval = setInterval(refreshRank, 10000);
+  } else { alert('密码错误，请重新输入'); }
+}
+
+function gotoRankPage() {
+  renderOverview(); renderRankList('小班'); showPage('page-rank');
+  if (adminInterval) clearInterval(adminInterval);
+  adminInterval = setInterval(refreshRank, 10000);
+}
+
+// ==================== 导出 ====================
+function exportData() {
+  const records = getAllRecords().filter(r => r.status === 'finished');
+  if (!records.length) { alert('暂无数据'); return; }
+  const header = ['年级','班级','姓名','步数','完成时间'];
+  const rows = records.sort((a,b) => b.steps-a.steps)
+    .map(r => [r.grade, r.class, r.name, r.steps, new Date(r.finished_at).toLocaleString('zh-CN')]);
+  const csv = '\uFEFF' + [header,...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = '小小马拉松成绩.csv'; a.click();
+}
+
+// ==================== 通用 ====================
+function gotoRegister() {
+  document.getElementById('sel-grade').value = '';
+  document.getElementById('sel-class').innerHTML = '<option value="">请先选择年级</option>';
+  document.getElementById('inp-name').value = '';
+  document.getElementById('btn-start').disabled = true;
+  showPage('page-register');
+}
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ==================== 初始化 ====================
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('admin') === '1') showPage('page-admin-login');
+</script>
+</body>
+</html>
