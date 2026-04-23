@@ -412,10 +412,12 @@
     </div>
   </div>
 
-  <div style="padding:0 16px 28px;">
+  <div style="padding:0 16px 12px;">
     <button class="btn btn-secondary" onclick="onExitCounting()">← 退出比赛</button>
   </div>
-</div>
+  <div style="padding:0 16px 28px;">
+    <button class="btn btn-primary" style="background:linear-gradient(135deg,#9b5de5,#7b4ecf);box-shadow:0 4px 16px rgba(155,93,229,0.35);" onclick="onResetReregister()">🔄 重新报名参赛</button>
+  </div></div>
 
 <!-- ========== 完成页 ========== -->
 <div class="page" id="page-result">
@@ -958,6 +960,17 @@ function onTimerEnd() {
 }
 
 function onExitCounting() { if (isRunning) showModal('modal-exit'); else gotoRegister(); }
+
+function onResetReregister() {
+  // 清除所有状态
+  localStorage.removeItem(RUN_KEY);
+  localStorage.removeItem(PROFILE_KEY);
+  // 停止计步
+  if (sensorId) { DeviceMotionEvent.removeEventListener('devicemotion', handler); sensorId = null; }
+  isRunning = false;
+  // 跳转到首页
+  showPage('page-signup');
+}
 
 function confirmExit() {
   clearInterval(timerInterval); isRunning = false;
